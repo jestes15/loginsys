@@ -13,7 +13,7 @@ int password_parse(std::string);
 
 constexpr auto username_header = "username::";
 constexpr auto password_header = "password::";
-
+//Next challenge, allow the user to create an account, meaing writing the username and password to the shadow file
 int main()
 {
     std::string username, password, encoded_password;
