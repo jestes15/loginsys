@@ -151,5 +151,5 @@ std::string sha512(std::string input)
     buf[2*SHA512::DIGEST_SIZE] = 0;
     for (int i = 0; i < SHA512::DIGEST_SIZE; i++)
         sprintf(buf+i*2, "%02x", digest[i]);
-    return std::string(buf);
+    return static_cast<std::string>(buf);
 }

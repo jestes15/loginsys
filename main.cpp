@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <pthread.h>
 
 #include "sha512.h"
 
@@ -8,41 +9,62 @@ using std::cout;
 using std::endl;
 using std::cin;
 
-int username_parse(std::string);
-int password_parse(std::string);
+using THREADFUNCPTR = void* (*)(void*);
+
+typedef struct login_username_info
+{
+    std::string username;
+    int username_ret;
+}login_username_info;
+
+typedef struct login_password_info
+{
+    std::string password;
+    std::string encoded_password;
+    int password_ret;
+}login_pass_info;
+
+void* username_parse(void* threadargs);
+void* password_parse(void* threadargs);
 
 constexpr auto username_header = "username::";
 constexpr auto password_header = "password::";
-//Next challenge, allow the user to create an account, meaing writing the username and password to the shadow file
+
 int main()
 {
-    std::string username, password, encoded_password;
+    pthread_t threads[2];
+
+    struct login_username_info username_data;
+    struct login_password_info password_data;
+
+    struct login_username_info* username_data_ptr = &username_data;
+    struct login_password_info* password_data_ptr = &password_data;
 
     int username_return_val, password_return_val;
     cout << "What is your username" << endl;
-    cin >> username;
+    cin >> username_data_ptr->username;
     cout << "What is your password" << endl;
-    cin >> password;
+    cin >> password_data_ptr->password;
 
-    encoded_password = sha512(password);
+    pthread_create(&threads[0], nullptr, (THREADFUNCPTR)username_parse, (void*)&username_data_ptr->username);
+    pthread_create(&threads[1], nullptr, (THREADFUNCPTR)password_parse, (void*)&password_data_ptr->password);
+    pthread_join(threads[0], nullptr);
+    pthread_join(threads[1], nullptr);
 
-    username_return_val = username_parse(username);
-    password_return_val = password_parse(encoded_password);
-
-    switch (username_return_val) {
-        case -1:
-            cout << "There was an error" << endl;
-            break;
+    switch (username_data_ptr->username_ret) {
         case 0:
             cout << "The operation has finished" << endl;
             break;
         case 1:
             cout << "Your username was found" << endl;
             break;
+        case 2:
+            cout << "There was an error" << endl;
+            break;
         default:
             cout << "An uncaught error has occured" << endl;
     }
-     switch (password_return_val) {
+     switch (password_data_ptr->password_ret) {
         case -1:
             cout << "There was an error" << endl;
             break;
@@ -58,17 +80,21 @@ int main()
     return 0;
 }
 
-int username_parse(std::string username)
+void* username_parse(void* threadargs)
 {
     std::ifstream user_data;
     std::string username_from_file, temp_username_from_file;
+
+    auto* data = static_cast<struct login_username_info*>(threadargs);
+    std::string username = data->username;
 
     user_data.open("shadow.txt", std::ios::app);
 
     if (!user_data.is_open())
     {
         cout << "The login file could no be opened" << endl;
-        return -1;
+        data->username_ret = 2;
+        return nullptr;
     }
     while (!user_data.eof()) 
     {
@@ -85,27 +111,36 @@ int username_parse(std::string username)
         if (username_from_file == username)
         {
             user_data.close();
-            return 1;
+            data->username_ret = 1;
+            return nullptr;
         }
     }
 
     user_data.close();
-    return 0;
+    data->username_ret = 0;
+    return nullptr;
 }
 
-int password_parse(std::string password) {
+void* password_parse(void* threadargs)
+{
 
     std::ifstream user_data;
     std::string password_from_file, temp_password_from_file;
+
+    auto* data = static_cast<struct login_password_info*>(threadargs);
+    std::string password = data->password;
+
+    data->encoded_password = sha512(password);
 
     user_data.open("shadow.txt", std::ios::app);
 
     if (!user_data.is_open())
     {
         cout << "The login file could no be opened" << endl;
-        return -1;
+        data->password_ret = 2;
+        return nullptr;
     }
-    while (!user_data.eof()) 
+    while (!user_data.eof())
     {
         user_data >> password_from_file;
         temp_password_from_file = password_from_file;
@@ -117,13 +152,17 @@ int password_parse(std::string password) {
 
         password_from_file = password_from_file.erase(0, 10);
 
-        if (password_from_file == password)
+        
+        if (password_from_file == data->encoded_password)
         {
             user_data.close();
-            return 1;
+            data->password_ret = 1;
+            return nullptr;
         }
+        
     }
 
     user_data.close();
-    return 0;
+    data->password_ret = 0;
+    return nullptr;
 }

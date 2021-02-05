@@ -25,10 +25,9 @@ protected:
     unsigned char m_block[2 * SHA384_512_BLOCK_SIZE];
     uint64 m_h[8];
 };
- 
- 
+
 std::string sha512(std::string input);
- 
+
 #define SHA2_SHFR(x, n)    (x >> n)
 #define SHA2_ROTR(x, n)   ((x >> n) | (x << ((sizeof(x) << 3) - n)))
 #define SHA2_ROTL(x, n)   ((x << n) | (x >> ((sizeof(x) << 3) - n)))
