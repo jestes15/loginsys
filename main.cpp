@@ -88,10 +88,16 @@ int main()
 
 void* create_account(void* threadargs)
 {
-    std::ifstream user_data;
+    std::ofstream user_data;
     user_data.open("shadow.txt", std::ios::app);
 
     auto* data = static_cast<struct user_account_creation*>(threadargs);
+
+    std::string username_file_string = username_header + data->username;
+    std::string password_file_string = password_header + data->password;
+
+    user_data << username_file_string;
+    user_data << password_file_string;
 
     //write password and username to file after starting thread to encode password in SHA512
 }
