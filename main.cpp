@@ -98,8 +98,7 @@ void* create_account(void* threadargs)
 
     user_data << username_file_string;
     user_data << password_file_string;
-
-    //write password and username to file after starting thread to encode password in SHA512
+    // TODO: write other information given below the username and password encoded in SHA256 and in a single line seperated by :::
 }
 
 void* username_parse(void* threadargs)
