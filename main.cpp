@@ -26,6 +26,13 @@ typedef struct login_password_info
     int password_ret;
 }login_pass_info;
 
+typedef struct user_account_creation
+{
+    std::string username;
+    std::string password;
+    int ret_value;
+}user_account_creation;
+
 void* username_parse(void* threadargs);
 void* password_parse(void* threadargs);
 
@@ -81,7 +88,12 @@ int main()
 
 void* create_account(void* threadargs)
 {
+    std::ifstream user_data;
+    user_data.open("shadow.txt", std::ios::app);
 
+    auto* data = static_cast<struct user_account_creation*>(threadargs);
+
+    //write password and username to file after starting thread to encode password in SHA512
 }
 
 void* username_parse(void* threadargs)
