@@ -48,7 +48,8 @@ const auto display_name_header = "display::";
 int
 main()
 {
-    pthread_t threads[3];
+    pthread_t threads[2];
+    pthread_t acc_creation_thread;
 
     struct login_username_info username_data;
     struct login_password_info password_data;
@@ -80,8 +81,34 @@ main()
 
             account_data_ptr->user_information = user_info;
 
-            pthread_create(&threads[2], nullptr, (THREADFUNCPTR)create_account, (void*)&account_data_ptr->user_information);
-            pthread_join(threads[2], nullptr);
+            cout << "What do you want your username name to be" << endl;
+            cin >> account_data_ptr->username;
+
+            cout << "What do you want your password to be" << endl;
+            cin >> user_info_temp;
+
+            cout << "Reenter your password confirm" << endl;
+            cin >> user_info;
+
+            if (user_info == user_info_temp) {
+                account_data_ptr->password = user_info;
+            }
+
+            pthread_create(&acc_creation_thread, nullptr, (THREADFUNCPTR)create_account, (void*)account_data_ptr);
+            cout << "Hello" << endl;
+            pthread_join(acc_creation_thread, nullptr);
+            switch (account_data_ptr->ret_value) {
+                case -1:
+                    cout << "Your account could no be created" << endl;
+                    break;
+                case 1:
+                    cout << "Your account was created successfully" << endl;
+                    break;
+                default:
+                    cout << "An unhandled error has occurred" << endl;
+                    break;
+            }
+            cout << "Account created" << endl;
         }
 
         else if (user_input == "L")
@@ -112,9 +139,14 @@ main()
 void* create_account(void* threadargs)
 {
     std::ofstream user_data;
-    user_data.open("shadow.txt", std::ios::app);
-
     auto* data = static_cast<struct user_account_creation*>(threadargs);
+
+    user_data.open("shadow.txt", std::ios::app);
+    if (!user_data.is_open())
+    {
+        data->ret_value = -1;
+        return nullptr;
+    }
 
     data->encoded_password = sha512(data->password);
 
@@ -125,6 +157,7 @@ void* create_account(void* threadargs)
     user_data << password_file_string;
     user_data << data->user_information;
 
+    data->ret_value = 1;
     return nullptr;
 }
 
