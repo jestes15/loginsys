@@ -1,14 +1,62 @@
-#include "main.h"
+#include <iostream>
+#include <string>
+#include <fstream>
+#include <pthread.h>
 
-int main()
+#include "sha512.h" //Header file for the SHA512 encoding function
+#include "sha256.h" //Header file for the SHA256 encoding function
+
+using std::cout;
+using std::endl;
+using std::cin;
+
+using THREADFUNCPTR = void* (*)(void*);
+
+typedef struct login_username_info
 {
-    pthread_t threads[2];
+    std::string username;
+    std::string return_string;
+    int username_ret;
+}login_username_info;
+
+typedef struct login_password_info
+{
+    std::string password;
+    std::string encoded_password;
+    std::string return_string;
+    int password_ret;
+}login_pass_info;
+
+typedef struct user_account_creation
+{
+    std::string username;
+    std::string password;
+    std::string encoded_password;
+    std::string user_information;
+    int ret_value;
+}user_account_creation;
+
+void* username_parse(void* threadargs);
+void* password_parse(void* threadargs);
+void* create_account(void* threadargs);
+
+const auto username_header = "username::";
+const auto password_header = "password::";
+const auto name_header = "name::";
+const auto display_name_header = "display::";
+
+int
+main()
+{
+    pthread_t threads[3];
 
     struct login_username_info username_data;
     struct login_password_info password_data;
+    struct user_account_creation account_data;
 
     struct login_username_info* username_data_ptr = &username_data;
     struct login_password_info* password_data_ptr = &password_data;
+    struct user_account_creation* account_data_ptr = &account_data;
     bool chosen_choice = true;
 
     while (chosen_choice)
@@ -20,7 +68,21 @@ int main()
         cin >> user_input;
         
         if (user_input == "C")
-        {}
+        {
+            std::string user_info, user_info_temp;
+            cout << "What is your name" << endl;
+            cin >> user_info_temp;
+            user_info += name_header + user_info_temp + "\n";
+            
+            cout << "What do you want your display name to be" << endl;
+            cin >> user_info_temp;
+            user_info += display_name_header + user_info_temp;
+
+            account_data_ptr->user_information = user_info;
+
+            pthread_create(&threads[2], nullptr, (THREADFUNCPTR)create_account, (void*)&account_data_ptr->user_information);
+            pthread_join(threads[2], nullptr);
+        }
 
         else if (user_input == "L")
         {   
@@ -54,13 +116,16 @@ void* create_account(void* threadargs)
 
     auto* data = static_cast<struct user_account_creation*>(threadargs);
 
+    data->encoded_password = sha512(data->password);
+
     std::string username_file_string = username_header + data->username;
-    std::string password_file_string = password_header + data->password;
+    std::string password_file_string = password_header + data->encoded_password;
 
     user_data << username_file_string;
     user_data << password_file_string;
-    
-    // TODO: write other information given below the username and password encoded in SHA256 and in a single line seperated by :::
+    user_data << data->user_information;
+
+    return nullptr;
 }
 
 void* username_parse(void* threadargs)
