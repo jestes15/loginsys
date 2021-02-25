@@ -65,7 +65,7 @@ main()
 
         std::string user_input;
         cout << "Welcome" << endl;
-        cout << "Do you want to create an account (C) or login (L)?";
+        cout << "Do you want to create an account (C) or login (L)?" << endl << "Or \"E\" to exit" << endl;
         cin >> user_input;
         
         if (user_input == "C")
@@ -77,20 +77,23 @@ main()
             
             cout << "What do you want your display name to be" << endl;
             cin >> user_info_temp;
-            user_info += display_name_header + user_info_temp;
+            user_info += display_name_header + user_info_temp + "\n";
 
             account_data_ptr->user_information = user_info;
 
             cout << "What do you want your username name to be" << endl;
             cin >> account_data_ptr->username;
+            account_data_ptr->username += "\n";
 
             cout << "What do you want your password to be" << endl;
             cin >> user_info_temp;
 
             cout << "Reenter your password confirm" << endl;
             cin >> user_info;
+            user_info += "\n";
 
-            if (user_info == user_info_temp) {
+            if (user_info == user_info_temp)
+            {
                 account_data_ptr->password = user_info;
             }
 
@@ -113,7 +116,6 @@ main()
 
         else if (user_input == "L")
         {   
-            chosen_choice = false;
             int username_return_val, password_return_val;
             cout << "What is your username" << endl;
             cin >> username_data_ptr->username;
@@ -128,6 +130,12 @@ main()
             cout << username_data_ptr->return_string << endl << password_data_ptr->return_string << endl;
         }
 
+        else if (user_input == "E")
+        {
+            chosen_choice = false;
+            break;
+        }
+
         else
         {
             cout << "That command is not recognized, please try again";
@@ -136,7 +144,8 @@ main()
     return 0;
 }
 
-void* create_account(void* threadargs)
+void*
+create_account(void* threadargs)
 {
     std::ofstream user_data;
     auto* data = static_cast<struct user_account_creation*>(threadargs);
@@ -153,15 +162,18 @@ void* create_account(void* threadargs)
     std::string username_file_string = username_header + data->username;
     std::string password_file_string = password_header + data->encoded_password;
 
+    user_data << "\n";
+
+    user_data << data->user_information;
     user_data << username_file_string;
     user_data << password_file_string;
-    user_data << data->user_information;
 
     data->ret_value = 1;
     return nullptr;
 }
 
-void* username_parse(void* threadargs)
+void*
+username_parse(void* threadargs)
 {
     std::ifstream user_data;
     std::string username_from_file, temp_username_from_file;
@@ -204,7 +216,8 @@ void* username_parse(void* threadargs)
     return nullptr;
 }
 
-void* password_parse(void* threadargs)
+void*
+password_parse(void* threadargs)
 {
 
     std::ifstream user_data;
